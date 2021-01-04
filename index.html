@@ -222,8 +222,7 @@
                     super(props);
                     this.props = props;
                     this.answer = 'unknown';
-                    this.state = {data:{}, error:null, answer:'loading data...'};
-                    this.loading = false;
+                    this.state = {data:{}, error:null, answer:'loading data...', loading:true};
                     let d = new Date();
                     this.year = d.getFullYear();
                     this.month = d.getMonth();
@@ -236,7 +235,7 @@
                 data_get(data_string){
                     let data = JSON.parse(data_string);
                     let answer = obj_get(data, [this.year, this.month+1, this.day])['answer'];
-                    this.setState({data: JSON.parse(data_string), answer});
+                    this.setState({data: JSON.parse(data_string), answer, loading:false});
                 }
 
                 data_not_get(errnum){
@@ -251,7 +250,7 @@
                                 <AnswerBox answer={this.state.answer}/>
                             </div>
                             <div class='box' style={ {backgroundColor: '#ffbbbb', display: this.state.error == null?'none':'block'} }>Oops, there was an error when loading the data: {this.state.error}</div>
-                            <Calendar data={this.state.data} loading={this.loading} year={this.year} month={this.month} day={this.day}/>
+                            <Calendar data={this.state.data} loading={this.state.loading} year={this.year} month={this.month} day={this.day}/>
                         </div>
                     );
                 }
