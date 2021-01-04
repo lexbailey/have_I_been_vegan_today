@@ -3,6 +3,7 @@
 import os
 import json
 import argparse
+import subprocess
 
 parser = argparse.ArgumentParser()
 parser.add_argument('data_dir')
@@ -17,6 +18,15 @@ years = sorted([int(y) for y in os.listdir(_dir)])
 
 data = {}
 
+def file_contents_or_blank(fname):
+    try:
+        return open(fname).read().strip()
+    except:
+        return ''
+
+def resize_image(fname_in, fname_out, size):
+    subprocess.check_call(['convert', fname_in, '-resize', size, '-gravity','center', '-background','black', '-extent', size, '-quality','90', fname_out])
+
 for year in years:
     data[year] = {}
     months_dir = os.path.join(_dir, str(year))
@@ -27,9 +37,18 @@ for year in years:
         days = sorted([int(d) for d in os.listdir(days_dir)])
         for day in days:
             leaf_dir = os.path.join(days_dir, str(day))
+            image_fnames = [f for f in os.listdir(leaf_dir) if os.path.splitext(f)[1].lower() == '.jpg']
+            thumb_cache_dir = os.path.join('image_cache/thumb/', leaf_dir)
+            prev_cache_dir = os.path.join('image_cache/preview/', leaf_dir)
+            os.makedirs(thumb_cache_dir, exist_ok=True)
+            os.makedirs(prev_cache_dir, exist_ok=True)
+            for image in image_fnames:
+                resize_image(os.path.join(leaf_dir, image), os.path.join(thumb_cache_dir, image), '300x200')
+                resize_image(os.path.join(leaf_dir, image), os.path.join(prev_cache_dir, image), '700x400')
             day_data = {
-                'answer': open(os.path.join(leaf_dir, 'answer')).read().strip()
-                ,'notes': open(os.path.join(leaf_dir, 'notes')).read().strip()
+                'answer': file_contents_or_blank(os.path.join(leaf_dir, 'answer'))
+                ,'notes': file_contents_or_blank(os.path.join(leaf_dir, 'notes'))
+                ,'images': image_fnames
             }
             data[year][month][day] = day_data
 

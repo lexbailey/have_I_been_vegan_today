@@ -19,18 +19,18 @@
                 width: fit-content;
                 font-size:1.5em;
             }
-            div.seventh_box{
+
+            div.calgrid{
+                display:grid;
+                grid-template-columns: repeat(7, 1fr);
+            }
+            div.cal_box{
                 border-radius: 15px;
-                --b: 0.2em;
-                --m: 0.3em;
-                --p: 0.8em;
-                border-width: var(--b);
+                border-width: 0.2em;
                 border-style:solid;
                 border-color:white;
-                margin: var(--m);
-                padding: var(--p);
-                width: calc((100% / 7) - ((var(--b) + var(--p) + var(--m))*2));
-                float: left;
+                margin: 0.3em;
+                padding: 0.8em
             }
 
             div.day_header{
@@ -51,6 +51,9 @@
                 border-radius:15px;
                 background-color: white;
                 white-space: pre-line
+            }
+            img.thumb{
+                width: 100%;
             }
         </style>
     </head>
@@ -104,6 +107,22 @@
                 xhttp.send();
             }
 
+            function full_image(y, m, d, fname){
+                return `data/${y}/${m}/${d}/${fname}`
+            }
+
+            function get_thumb(y, m, d, fname){
+                return `image_cache/thumb/data/${y}/${m}/${d}/${fname}`
+            }
+
+            function first_thumb(day_data){
+                let images = day_data.images
+                if (!images) {return null}
+                let image = images[0];
+                if (!image) {return null}
+                return get_thumb(day_data.year, day_data.month, day_data.n, image)
+            }
+
             function obj_get(ob, path){
                 ob = ob || {}
                 path.forEach(p=>{
@@ -136,6 +155,8 @@
                         d => {
                             let day = obj_get(this.props.data, [year, month+1, d+1]);
                             day.n = d+1;
+                            day.year = year;
+                            day.month = month+1;
                             return day;
                         }
                     ));
@@ -188,6 +209,26 @@
                             <h1>Historical data and notes</h1>
                             <img src='loading.gif' style={ {display: this.props.loading?'block':'none'} } />
                             <div style={ {display: this.props.loading?'none':'block'} } class='cal'>
+
+                                <h2>Month view for {new Date(0,this.state.month).toLocaleDateString(get_lang(), { month: 'long' })} {this.state.year}</h2>
+                                <button onClick={()=>this.set_month(-1)}>&lt; last month</button>
+                                <button onClick={()=>this.set_month(0)}>This month</button>
+                                <button onClick={()=>this.set_month(1)}>next month &gt;</button>
+                                <div class='calgrid'>
+                                    {Array.from(Array(7).keys()).map(n =>
+                                        <div class='cal_box day_header'>{new Date(2021,1, n+1).toLocaleDateString(get_lang(), { weekday: 'long' })}</div>
+                                    )}
+                                </div>
+                                <div class='calgrid'>
+                                    {this.days(this.state.year, this.state.month).map(day_data =>
+                                        <div onClick={()=>{this.skip_to_day(day_data.n)}} class={'cal_box day'+ (this.state.day == day_data.n?' selected':'')} style={ {opacity:day_data.n == null?0:1, backgroundColor:answer_color(day_data.answer)} }>
+                                            {day_data.n}
+                                            <img class='thumb' src={first_thumb(day_data)} />
+                                        </div>
+                                    )}
+                                    <div style={{clear:'both'}}></div>
+                                </div>
+
                                 <h2 style={ {display: 'inline-block'} }>Was [name goes here] vegan on {this.state.day} {new Date(0,this.state.month).toLocaleDateString(get_lang(), { month: 'long' })} {this.state.year}?</h2>
                                 <AnswerBox style={ {display: 'inline-block'} } answer={this.todays_data()['answer']} />
                                 <div>
@@ -196,21 +237,11 @@
                                 </div>
                                 <h3>Notes for selected day</h3>
                                 <p class='notebox'>{(this.todays_data()['notes'] || '(No notes yet for this date)')}</p>
-                                <h2>Month view for {new Date(0,this.state.month).toLocaleDateString(get_lang(), { month: 'long' })} {this.state.year}</h2>
-                                <button onClick={()=>this.set_month(-1)}>&lt; last month</button>
-                                <button onClick={()=>this.set_month(0)}>This month</button>
-                                <button onClick={()=>this.set_month(1)}>next month &gt;</button>
-                                <div>
-                                    {Array.from(Array(7).keys()).map(n =>
-                                        <div class='seventh_box day_header'>{new Date(2021,1, n+1).toLocaleDateString(get_lang(), { weekday: 'long' })}</div>
-                                    )}
-                                </div>
-                                <div>
-                                    {this.days(this.state.year, this.state.month).map(day_data =>
-                                        <div onClick={()=>{this.skip_to_day(day_data.n)}} class={'seventh_box day'+ (this.state.day == day_data.n?' selected':'')} style={ {opacity:day_data.n == null?0:1, backgroundColor:answer_color(day_data.answer)} }>{day_data.n}</div>
-                                    )}
-                                    <div style={{clear:'both'}}></div>
-                                </div>
+                                <h3>Images attached to selected day</h3>
+                                {(this.todays_data().images || []).map(
+                                    img=> <a href={full_image(this.state.year, this.state.month+1, this.state.day, img)}><img src={get_thumb(this.state.year, this.state.month+1, this.state.day, img)} /></a>
+                                )}
+
                                 <div>
                                     <p>
                                         This is an instance of the Veganuary progress logger tool written by Dan. See details here: <a href='https://github.com/danieljabailey/have_I_been_vegan_today'>https://github.com/danieljabailey/have_I_been_vegan_today</a>
