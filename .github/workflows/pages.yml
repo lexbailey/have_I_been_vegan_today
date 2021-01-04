@@ -11,7 +11,10 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Install and Build 🔧
+      - name: Install deps
+        run: sudo apt install imagemagick
+
+      - name: Build 🔧
         run: |
           ./build
           rm .gitignore
