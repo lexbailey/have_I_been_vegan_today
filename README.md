@@ -1,6 +1,6 @@
 # Has Dan been a vegan today?
 
-The answer to this question, available here: TODO set up GH pages :)
+The answer to this question, available here: http://danieljabailey.github.io/have_I_been_vegan_today
 
 # Have I been a vegan today?
 
