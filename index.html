@@ -1,0 +1,273 @@
+<!doctype html>
+<html>
+    <head>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/6.26.0/babel.min.js" integrity="sha512-kp7YHLxuJDJcOzStgd6vtpxr4ZU9kjn77e6dBsivSz+pUuAuMlE2UTdKB7jjsWT84qbS8kdCWHPETnP/ctrFsA==" crossorigin="anonymous"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/react/16.13.1/umd/react.production.min.js" integrity="sha512-SUJujhtUWZUlwsABaZNnTFRlvCu7XGBZBL1VF33qRvvgNk3pBS9E353kcag4JAv05/nsB9sanSXFbdHAUW9+lg==" crossorigin="anonymous"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/16.13.1/umd/react-dom.production.min.js" integrity="sha512-SYsXmAblZhruCNUVmTp5/v2a1Fnoia06iJh3+L9B9wUaqpRVjcNBQsqAglQG9b5+IaVCfLDH5+vW923JL5epZA==" crossorigin="anonymous"></script>
+        <!--<title>Has Dan been a vegan today?</title>-->
+        <style>
+            div.box{
+                border-radius:15px;
+                background-color:#eeeeff;
+                padding:1em;
+                margin-bottom:1em;
+            }
+            p.answer{
+                margin: 1em;
+                padding: 1em;
+                border-radius: 15px;
+                width: fit-content;
+                font-size:1.5em;
+            }
+            div.seventh_box{
+                border-radius: 15px;
+                --b: 0.2em;
+                --m: 0.3em;
+                --p: 0.8em;
+                border-width: var(--b);
+                border-style:solid;
+                border-color:white;
+                margin: var(--m);
+                padding: var(--p);
+                width: calc((100% / 7) - ((var(--b) + var(--p) + var(--m))*2));
+                float: left;
+            }
+
+            div.day_header{
+                background-color:#aaaaff
+            }
+
+            div.day{
+                background-color: white;
+                cursor: pointer;
+            }
+
+            div.selected{
+                border-color:black;
+            }
+
+            p.notebox{
+                padding:0.5em;
+                border-radius:15px;
+                background-color: white;
+                white-space: pre-line
+            }
+        </style>
+    </head>
+    <body>
+        <div id='content'></div>
+        <script type='text/babel'>
+
+            function answer_color(answer){
+                if (answer=='no') return '#ffbbbb';
+                if (answer=='yes') return '#bbffbb';
+                if (answer==undefined) return '#ffffff';
+                if (answer==null) return '#ffffff';
+                return '#ffffbb';
+            }
+
+            class AnswerBox extends React.Component {
+                constructor(props){
+                    super(props);
+                    this.props = props;
+                }
+
+                render(){
+                    return (
+                        <div style={this.props.style}>
+                            <p class='answer' style={ {backgroundColor:answer_color(this.props.answer)} }>{this.props.answer || 'unknown'}</p>
+                        </div>
+                    );
+                }
+            }
+
+            function get_lang(){
+                if (navigator.languages != undefined)
+                    return navigator.languages[0];
+                return navigator.language;
+            }
+
+            function load_data(good_cb, bad_cb) {
+                var xhttp = new XMLHttpRequest();
+                xhttp.onreadystatechange = function() {
+                    if (this.readyState == 4){
+                        if (this.status == 200) {
+                            good_cb(this.responseText);
+                        }
+                        else{
+                            bad_cb(this.status);
+                        }
+                    }
+                };
+                xhttp.open("GET", "data.json", true);
+                xhttp.send();
+            }
+
+            function obj_get(ob, path){
+                console.log(ob, path);
+                ob = ob || {}
+                path.forEach(p=>{
+                    ob = ob[''+p] || {};
+                    //console.log(p, ob);
+                });
+                return ob;
+            }
+
+            class Calendar extends React.Component {
+                constructor(props){
+                    super(props);
+                    this.props = props;
+                    this.state = {
+                        year: this.props.year
+                        ,month: this.props.month
+                        ,day: this.props.day
+                    }
+                }
+
+                days(year, month){
+                    console.log(year, month);
+                    let days_in_month = new Date(year, month+1, 0).getDate();
+                    let first_day_of_week = new Date(year, month, 1).getDay();
+                    if (first_day_of_week == 0) {first_day_of_week = 7;}
+                    console.log(first_day_of_week);
+                    return Array.from(Array(first_day_of_week - 1).keys()).map(
+                        d => {
+                            return {n:null} // indicates placeholder day
+                        }
+                    ).concat(
+                    Array.from(Array(days_in_month).keys()).map(
+                        d => {
+                            let day = obj_get(this.props.data, [year, month+1, d+1]);
+                            day.n = d+1;
+                            console.log(day);
+                            return day;
+                        }
+                    ));
+                }
+
+                set_month(m){
+                    // m is delta from current month
+                    console.log(m);
+                    let month = this.state.month
+                    let year = this.state.year
+                    month += m;
+                    if (month < 0){
+                        year -= 1;
+                        month = 11;
+                    }
+                    if (month > 11){
+                        year += 1;
+                        month = 0;
+                    }
+                    if (m == 0){
+                        let d = new Date();
+                        year = d.getFullYear();
+                        month =  d.getMonth();
+                    }
+                    this.setState({
+                        month, year
+                    })
+                }
+
+                set_day(d){
+                    // d is day delta from current selection
+                    let day = this.state.day
+                    let month = this.state.month
+                    let year = this.state.year
+                    let newday = new Date(year, month, day);
+                    newday.setDate(newday.getDate() + d);
+                    this.setState({year: newday.getFullYear(), month: newday.getMonth(), day: newday.getDate()});
+                }
+
+                skip_to_day(d){
+                    this.setState({day:d});
+                }
+
+                todays_data(){
+                    return obj_get(this.props.data, [this.state.year, this.state.month+1, this.state.day]);
+                }
+
+                render(){
+                    return(
+                        <div class='box'>
+                            <h1>Historical data and notes</h1>
+                            <img src='loading.gif' style={ {display: this.props.loading?'block':'none'} } />
+                            <div style={ {display: this.props.loading?'none':'block'} } class='cal'>
+                                <h2 style={ {display: 'inline-block'} }>Was ... on {this.state.day} {new Date(0,this.state.month).toLocaleDateString(get_lang(), { month: 'long' })} {this.state.year}?</h2>
+                                <AnswerBox style={ {display: 'inline-block'} } answer={this.todays_data()['answer']} />
+                                <div>
+                                    <button onClick={()=>this.set_day(-1)}>&lt; previous day</button>
+                                    <button onClick={()=>this.set_day(+1)}>next day &gt;</button>
+                                </div>
+                                <p class='notebox'>{(this.todays_data()['notes'] || '(No notes yet for this date)')}</p>
+                                <h2>Month view for {new Date(0,this.state.month).toLocaleDateString(get_lang(), { month: 'long' })} {this.state.year}</h2>
+                                <button onClick={()=>this.set_month(-1)}>&lt; last month</button>
+                                <button onClick={()=>this.set_month(0)}>This month</button>
+                                <button onClick={()=>this.set_month(1)}>next month &gt;</button>
+                                <div>
+                                    {Array.from(Array(7).keys()).map(n =>
+                                        <div class='seventh_box day_header'>{new Date(2021,1, n+1).toLocaleDateString(get_lang(), { weekday: 'long' })}</div>
+                                    )}
+                                </div>
+                                <div>
+                                    {this.days(this.state.year, this.state.month).map(day_data =>
+                                        <div onClick={()=>{this.skip_to_day(day_data.n)}} class={'seventh_box day'+ (this.state.day == day_data.n?' selected':'')} style={ {opacity:day_data.n == null?0:1, backgroundColor:answer_color(day_data.answer)} }>{day_data.n}</div>
+                                    )}
+                                    <div style={{clear:'both'}}></div>
+                                </div>
+                            </div>
+                        </div>
+                    );
+                }
+            }
+
+            class App extends React.Component {
+                constructor(props){
+                    super(props);
+                    this.props = props;
+                    this.answer = 'unknown';
+                    this.state = {data:{}, error:null, answer:'loading data...'};
+                    this.loading = false;
+                    let d = new Date();
+                    this.year = d.getFullYear();
+                    this.month = d.getMonth();
+                    this.day= d.getDate();
+                    console.log(this.year, this.month);
+                    this.data_get = this.data_get.bind(this);
+                    this.data_not_get = this.data_not_get.bind(this);
+                    load_data(this.data_get, this.data_not_get);
+                }
+
+                data_get(data_string){
+                    let data = JSON.parse(data_string);
+                    let answer = obj_get(data, [this.year, this.month+1, this.day])['answer'];
+                    console.log(answer);
+                    this.setState({data: JSON.parse(data_string), answer});
+                }
+
+                data_not_get(errnum){
+                    this.setState({error:'HTTP status '+errnum});
+                }
+
+                render(){
+                    return(
+                        <div>
+                            <div class='box'>
+                                {/*<h1>Has Dan been a vegan today?</h1>*/}
+                                <AnswerBox answer={this.state.answer}/>
+                            </div>
+                            <div class='box' style={ {backgroundColor: '#ffbbbb', display: this.state.error == null?'none':'block'} }>Oops, there was an error when loading the data: {this.state.error}</div>
+                            <Calendar data={this.state.data} loading={this.loading} year={this.year} month={this.month} day={this.day}/>
+                        </div>
+                    );
+                }
+            }
+
+            ReactDOM.render(
+                <App/>
+                ,document.getElementById('content')
+            );
+
+            </script>
+    </body>
+</html>
