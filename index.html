@@ -193,6 +193,7 @@
                                     <button onClick={()=>this.set_day(-1)}>&lt; previous day</button>
                                     <button onClick={()=>this.set_day(+1)}>next day &gt;</button>
                                 </div>
+                                <h3>Notes for selected day</h3>
                                 <p class='notebox'>{(this.todays_data()['notes'] || '(No notes yet for this date)')}</p>
                                 <h2>Month view for {new Date(0,this.state.month).toLocaleDateString(get_lang(), { month: 'long' })} {this.state.year}</h2>
                                 <button onClick={()=>this.set_month(-1)}>&lt; last month</button>
