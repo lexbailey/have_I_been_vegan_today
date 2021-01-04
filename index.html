@@ -193,7 +193,7 @@
                             <h1>Historical data and notes</h1>
                             <img src='loading.gif' style={ {display: this.props.loading?'block':'none'} } />
                             <div style={ {display: this.props.loading?'none':'block'} } class='cal'>
-                                <h2 style={ {display: 'inline-block'} }>Was ... on {this.state.day} {new Date(0,this.state.month).toLocaleDateString(get_lang(), { month: 'long' })} {this.state.year}?</h2>
+                                <h2 style={ {display: 'inline-block'} }>Was [name goes here] vegan on {this.state.day} {new Date(0,this.state.month).toLocaleDateString(get_lang(), { month: 'long' })} {this.state.year}?</h2>
                                 <AnswerBox style={ {display: 'inline-block'} } answer={this.todays_data()['answer']} />
                                 <div>
                                     <button onClick={()=>this.set_day(-1)}>&lt; previous day</button>
@@ -253,7 +253,7 @@
                     return(
                         <div>
                             <div class='box'>
-                                {/*<h1>Has Dan been a vegan today?</h1>*/}
+                                <h1>Has [name goes here] been a vegan today?</h1>*/}
                                 <AnswerBox answer={this.state.answer}/>
                             </div>
                             <div class='box' style={ {backgroundColor: '#ffbbbb', display: this.state.error == null?'none':'block'} }>Oops, there was an error when loading the data: {this.state.error}</div>
