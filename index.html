@@ -59,11 +59,11 @@
         <script type='text/babel'>
 
             function answer_color(answer){
+                if (answer==undefined) return '#ffffff';
+                if (answer==null) return '#ffffff';
                 answer = answer.toLowerCase();
                 if (answer=='no') return '#ffbbbb';
                 if (answer=='yes') return '#bbffbb';
-                if (answer==undefined) return '#ffffff';
-                if (answer==null) return '#ffffff';
                 return '#ffffbb';
             }
 
