@@ -104,11 +104,9 @@
             }
 
             function obj_get(ob, path){
-                console.log(ob, path);
                 ob = ob || {}
                 path.forEach(p=>{
                     ob = ob[''+p] || {};
-                    //console.log(p, ob);
                 });
                 return ob;
             }
@@ -125,11 +123,9 @@
                 }
 
                 days(year, month){
-                    console.log(year, month);
                     let days_in_month = new Date(year, month+1, 0).getDate();
                     let first_day_of_week = new Date(year, month, 1).getDay();
                     if (first_day_of_week == 0) {first_day_of_week = 7;}
-                    console.log(first_day_of_week);
                     return Array.from(Array(first_day_of_week - 1).keys()).map(
                         d => {
                             return {n:null} // indicates placeholder day
@@ -139,7 +135,6 @@
                         d => {
                             let day = obj_get(this.props.data, [year, month+1, d+1]);
                             day.n = d+1;
-                            console.log(day);
                             return day;
                         }
                     ));
@@ -147,7 +142,6 @@
 
                 set_month(m){
                     // m is delta from current month
-                    console.log(m);
                     let month = this.state.month
                     let year = this.state.year
                     month += m;
@@ -232,7 +226,6 @@
                     this.year = d.getFullYear();
                     this.month = d.getMonth();
                     this.day= d.getDate();
-                    console.log(this.year, this.month);
                     this.data_get = this.data_get.bind(this);
                     this.data_not_get = this.data_not_get.bind(this);
                     load_data(this.data_get, this.data_not_get);
@@ -241,7 +234,6 @@
                 data_get(data_string){
                     let data = JSON.parse(data_string);
                     let answer = obj_get(data, [this.year, this.month+1, this.day])['answer'];
-                    console.log(answer);
                     this.setState({data: JSON.parse(data_string), answer});
                 }
 
