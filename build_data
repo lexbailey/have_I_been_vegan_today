@@ -25,7 +25,7 @@ def file_contents_or_blank(fname):
         return ''
 
 def resize_image(fname_in, fname_out, size):
-    subprocess.check_call(['convert', fname_in, '-resize', size, '-gravity','center', '-background','black', '-extent', size, '-quality','90', fname_out])
+    subprocess.check_call(['convert', fname_in, '-auto-orient', '-resize', size, '-gravity','center', '-background','black', '-extent', size, '-quality','90', fname_out])
 
 for year in years:
     data[year] = {}
