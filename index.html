@@ -30,7 +30,8 @@
                 border-style:solid;
                 border-color:white;
                 margin: 0.3em;
-                padding: 0.8em
+                padding: 0.8em;
+                overflow: hidden;
             }
 
             div.day_header{
@@ -54,6 +55,13 @@
             }
             img.thumb{
                 width: 100%;
+            }
+
+            p{
+                overflow-wrap: break-word;
+            }
+            button{
+                font-size:1em;
             }
         </style>
     </head>
@@ -229,8 +237,8 @@
                                     <div style={{clear:'both'}}></div>
                                 </div>
 
-                                <h2 style={ {display: 'inline-block'} }>Was [name goes here] vegan on {this.state.day} {new Date(0,this.state.month).toLocaleDateString(get_lang(), { month: 'long' })} {this.state.year}?</h2>
-                                <AnswerBox style={ {display: 'inline-block'} } answer={this.todays_data()['answer']} />
+                                <h2>Was [name goes here] vegan on {this.state.day} {new Date(0,this.state.month).toLocaleDateString(get_lang(), { month: 'long' })} {this.state.year}?</h2>
+                                <AnswerBox answer={this.todays_data()['answer']} />
                                 <div>
                                     <button onClick={()=>this.set_day(-1)}>&lt; previous day</button>
                                     <button onClick={()=>this.set_day(+1)}>next day &gt;</button>
@@ -289,6 +297,7 @@
                             </div>
                             <div class='box' style={ {backgroundColor: '#ffbbbb', display: this.state.error == null?'none':'block'} }>Oops, there was an error when loading the data: {this.state.error}</div>
                             <Calendar data={this.state.data} loading={this.state.loading} year={this.year} month={this.month} day={this.day}/>
+                            <div style={ {height:'100vh'} }></div>
                         </div>
                     );
                 }
