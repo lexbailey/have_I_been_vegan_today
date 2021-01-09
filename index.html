@@ -232,7 +232,7 @@
                                         {this.days(this.state.year, this.state.month).map(day_data =>
                                             <div onClick={()=>{this.skip_to_day(day_data.n)}} class={'cal_box day'+ (this.state.day == day_data.n?' selected':'')} style={ {opacity:day_data.n == null?0:1, backgroundColor:answer_color(day_data.answer)} }>
                                                 {day_data.n}
-                                                <img class='thumb' src={first_thumb(day_data)} alt={day_data.image_alts && day_data.image_alts[0]} />
+                                                {day_data.images && day_data.images.length>0?<img class='thumb' src={first_thumb(day_data)} alt={day_data.image_alts && day_data.image_alts[0]} />:[]}
                                             </div>
                                         )}
                                         <div style={{clear:'both'}}></div>
