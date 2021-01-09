@@ -24,6 +24,15 @@ def file_contents_or_blank(fname):
     except:
         return ''
 
+def get_alt_text(fname):
+    fname += '.alt'
+    try:
+        with open(fname) as f:
+            return f.read().strip()
+    except FileNotFoundError:
+        print('Warning: Unable to locate image alt text file: {}'.format(fname))
+    return '';
+
 def resize_image(fname_in, fname_out, size):
     subprocess.check_call(['convert', fname_in, '-auto-orient', '-resize', size, '-gravity','center', '-background','black', '-extent', size, '-quality','90', fname_out])
 
@@ -42,6 +51,9 @@ for year in years:
             prev_cache_dir = os.path.join('image_cache/preview/', leaf_dir)
             os.makedirs(thumb_cache_dir, exist_ok=True)
             os.makedirs(prev_cache_dir, exist_ok=True)
+            image_alts = [
+                get_alt_text(os.path.join(leaf_dir, os.path.splitext(f)[0])) for f in image_fnames
+            ]
             for image in image_fnames:
                 resize_image(os.path.join(leaf_dir, image), os.path.join(thumb_cache_dir, image), '300x200')
                 resize_image(os.path.join(leaf_dir, image), os.path.join(prev_cache_dir, image), '700x400')
@@ -49,6 +61,7 @@ for year in years:
                 'answer': file_contents_or_blank(os.path.join(leaf_dir, 'answer'))
                 ,'notes': file_contents_or_blank(os.path.join(leaf_dir, 'notes'))
                 ,'images': image_fnames
+                ,'image_alts': image_alts
             }
             data[year][month][day] = day_data
 

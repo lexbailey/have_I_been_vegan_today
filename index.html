@@ -1,10 +1,11 @@
 <!doctype html>
-<html>
+<html lang="en-GB">
     <head>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/6.26.0/babel.min.js" integrity="sha512-kp7YHLxuJDJcOzStgd6vtpxr4ZU9kjn77e6dBsivSz+pUuAuMlE2UTdKB7jjsWT84qbS8kdCWHPETnP/ctrFsA==" crossorigin="anonymous"></script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/react/16.13.1/umd/react.production.min.js" integrity="sha512-SUJujhtUWZUlwsABaZNnTFRlvCu7XGBZBL1VF33qRvvgNk3pBS9E353kcag4JAv05/nsB9sanSXFbdHAUW9+lg==" crossorigin="anonymous"></script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/16.13.1/umd/react-dom.production.min.js" integrity="sha512-SYsXmAblZhruCNUVmTp5/v2a1Fnoia06iJh3+L9B9wUaqpRVjcNBQsqAglQG9b5+IaVCfLDH5+vW923JL5epZA==" crossorigin="anonymous"></script>
         <title>Has [name] been a vegan today?</title>
+        <meta name="Description" content="A record of [name]'s efforts to be vegan for veganuary.">
         <style>
             div.box{
                 border-radius:15px;
@@ -215,48 +216,53 @@
                     return(
                         <div class='box'>
                             <h1>Historical data and notes</h1>
-                            <img src='loading.gif' style={ {display: this.props.loading?'block':'none'} } />
+                            <img src='loading.gif' alt='Content is still loading, please wait.' style={ {display: this.props.loading?'block':'none'} } />
                             <div style={ {display: this.props.loading?'none':'block'} } class='cal'>
+                                <section aria-labelledby='month_heading'>
+                                    <h2 id='month_heading'>Month view for {new Date(0,this.state.month).toLocaleDateString(get_lang(), { month: 'long' })} {this.state.year}</h2>
+                                    <button onClick={()=>this.set_month(-1)}>&lt; last month</button>
+                                    <button onClick={()=>this.set_month(0)}>This month</button>
+                                    <button onClick={()=>this.set_month(1)}>next month &gt;</button>
+                                    <div class='calgrid'>
+                                        {Array.from(Array(7).keys()).map(n =>
+                                            <div class='cal_box day_header'>{new Date(2021,1, n+1).toLocaleDateString(get_lang(), { weekday: 'long' })}</div>
+                                        )}
+                                    </div>
+                                    <div class='calgrid'>
+                                        {this.days(this.state.year, this.state.month).map(day_data =>
+                                            <div onClick={()=>{this.skip_to_day(day_data.n)}} class={'cal_box day'+ (this.state.day == day_data.n?' selected':'')} style={ {opacity:day_data.n == null?0:1, backgroundColor:answer_color(day_data.answer)} }>
+                                                {day_data.n}
+                                                <img class='thumb' src={first_thumb(day_data)} />
+                                            </div>
+                                        )}
+                                        <div style={{clear:'both'}}></div>
+                                    </div>
+                                </section>
 
-                                <h2>Month view for {new Date(0,this.state.month).toLocaleDateString(get_lang(), { month: 'long' })} {this.state.year}</h2>
-                                <button onClick={()=>this.set_month(-1)}>&lt; last month</button>
-                                <button onClick={()=>this.set_month(0)}>This month</button>
-                                <button onClick={()=>this.set_month(1)}>next month &gt;</button>
-                                <div class='calgrid'>
-                                    {Array.from(Array(7).keys()).map(n =>
-                                        <div class='cal_box day_header'>{new Date(2021,1, n+1).toLocaleDateString(get_lang(), { weekday: 'long' })}</div>
+                                <section aria-labelledby='day_heading'>
+                                    <h2 id='day_heading'>Was [name goes here] vegan on {this.state.day} {new Date(0,this.state.month).toLocaleDateString(get_lang(), { month: 'long' })} {this.state.year}?</h2>
+                                    <AnswerBox answer={this.todays_data()['answer']} />
+                                    <div>
+                                        <button onClick={()=>this.set_day(-1)}>&lt; previous day</button>
+                                        <button onClick={()=>this.set_day(+1)}>next day &gt;</button>
+                                    </div>
+                                    <h3>Notes for selected day</h3>
+                                    <p class='notebox'>{(this.todays_data()['notes'] || '(No notes yet for this date)')}</p>
+                                    <h3>Images attached to selected day</h3>
+                                    {(this.todays_data().images || []).map(
+                                        img=> <a href={full_image(this.state.year, this.state.month+1, this.state.day, img)}><img src={get_thumb(this.state.year, this.state.month+1, this.state.day, img)} /></a>
                                     )}
-                                </div>
-                                <div class='calgrid'>
-                                    {this.days(this.state.year, this.state.month).map(day_data =>
-                                        <div onClick={()=>{this.skip_to_day(day_data.n)}} class={'cal_box day'+ (this.state.day == day_data.n?' selected':'')} style={ {opacity:day_data.n == null?0:1, backgroundColor:answer_color(day_data.answer)} }>
-                                            {day_data.n}
-                                            <img class='thumb' src={first_thumb(day_data)} />
-                                        </div>
-                                    )}
-                                    <div style={{clear:'both'}}></div>
-                                </div>
 
-                                <h2>Was [name goes here] vegan on {this.state.day} {new Date(0,this.state.month).toLocaleDateString(get_lang(), { month: 'long' })} {this.state.year}?</h2>
-                                <AnswerBox answer={this.todays_data()['answer']} />
-                                <div>
-                                    <button onClick={()=>this.set_day(-1)}>&lt; previous day</button>
-                                    <button onClick={()=>this.set_day(+1)}>next day &gt;</button>
-                                </div>
-                                <h3>Notes for selected day</h3>
-                                <p class='notebox'>{(this.todays_data()['notes'] || '(No notes yet for this date)')}</p>
-                                <h3>Images attached to selected day</h3>
-                                {(this.todays_data().images || []).map(
-                                    img=> <a href={full_image(this.state.year, this.state.month+1, this.state.day, img)}><img src={get_thumb(this.state.year, this.state.month+1, this.state.day, img)} /></a>
-                                )}
-
-                                <div>
-                                    <p>
-                                        This is an instance of the Veganuary progress logger tool written by Dan. See details here: <a href='https://github.com/danieljabailey/have_I_been_vegan_today'>https://github.com/danieljabailey/have_I_been_vegan_today</a>
-                                        <br />
-                                        Why did Dan write this? Well if I'm gonna turn vegan this month, I want a record of how it happened.
-                                    </p>
-                                </div>
+                                </section>
+                                <footer>
+                                    <div>
+                                        <p>
+                                            This is an instance of the Veganuary progress logger tool written by Dan. See details here: <a href='https://github.com/danieljabailey/have_I_been_vegan_today'>https://github.com/danieljabailey/have_I_been_vegan_today</a>
+                                            <br />
+                                            Why did Dan write this? Well if I'm gonna turn vegan this month, I want a record of how it happened.
+                                        </p>
+                                    </div>
+                                </footer>
                             </div>
                         </div>
                     );
@@ -292,8 +298,10 @@
                     return(
                         <div>
                             <div class='box'>
-                                <h1>Has [name goes here] been a vegan today?</h1>
-                                <AnswerBox answer={this.state.answer}/>
+                                <section aria-labelledby='question'>
+                                    <h1 id='question'>Has [name goes here] been a vegan today?</h1>
+                                    <AnswerBox answer={this.state.answer}/>
+                                </section>
                             </div>
                             <div class='box' style={ {backgroundColor: '#ffbbbb', display: this.state.error == null?'none':'block'} }>Oops, there was an error when loading the data: {this.state.error}</div>
                             <Calendar data={this.state.data} loading={this.state.loading} year={this.year} month={this.month} day={this.day}/>
