@@ -232,7 +232,7 @@
                                         {this.days(this.state.year, this.state.month).map(day_data =>
                                             <div onClick={()=>{this.skip_to_day(day_data.n)}} class={'cal_box day'+ (this.state.day == day_data.n?' selected':'')} style={ {opacity:day_data.n == null?0:1, backgroundColor:answer_color(day_data.answer)} }>
                                                 {day_data.n}
-                                                <img class='thumb' src={first_thumb(day_data)} />
+                                                <img class='thumb' src={first_thumb(day_data)} alt={day_data.image_alts && day_data.image_alts[0]} />
                                             </div>
                                         )}
                                         <div style={{clear:'both'}}></div>
@@ -250,7 +250,7 @@
                                     <p class='notebox'>{(this.todays_data()['notes'] || '(No notes yet for this date)')}</p>
                                     <h3>Images attached to selected day</h3>
                                     {(this.todays_data().images || []).map(
-                                        img=> <a href={full_image(this.state.year, this.state.month+1, this.state.day, img)}><img src={get_thumb(this.state.year, this.state.month+1, this.state.day, img)} /></a>
+                                        (img,i)=> <a href={full_image(this.state.year, this.state.month+1, this.state.day, img)}><img alt={this.todays_data().image_alts[i]} src={get_thumb(this.state.year, this.state.month+1, this.state.day, img)} /></a>
                                     )}
 
                                 </section>
