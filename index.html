@@ -80,6 +80,14 @@
                 return '#ffffbb';
             }
 
+            function obj_get(ob, path){
+                ob = ob || {}
+                path.forEach(p=>{
+                    ob = ob[''+p] || {};
+                });
+                return ob;
+            }
+
             class AnswerBox extends React.Component {
                 constructor(props){
                     super(props);
@@ -88,8 +96,53 @@
 
                 render(){
                     return (
-                        <div style={this.props.style}>
+                        <div>
                             <p class='answer' style={ {backgroundColor:answer_color(this.props.answer)} }>{this.props.answer || 'unknown'}</p>
+                        </div>
+                    );
+                }
+            }
+
+            class StreakIndicator extends React.Component {
+                constructor(props){
+                    super(props);
+                    this.props = props;
+                }
+
+                num_days(){
+                    let s = 0;
+                    let today = new Date(); today.setHours(0, 0, 0, 0);
+                    let ans;
+                    let t;
+                    let cond;
+                    let discount = 0;
+                    do {
+                        t = new Date(today);
+                        t.setDate(t.getDate() - s);
+                        let y = t.getFullYear();
+                        let m = t.getMonth()+1; // plus one, because consistency is overrated :P
+                        let d = t.getDate();
+                        ans = obj_get(this.props.data, [y, m, d, "answer"]);
+                        cond = (typeof ans == "string") && (ans.toLowerCase() == "yes");
+                        console.log(cond);
+                        if (!cond && s==0){
+                            console.log("maybe more?");
+                            // maybe today hasn't been recorded yet
+                            if (typeof ans != "string"){
+                                console.log("yesmore?");
+                                cond = true;
+                                discount = 1;
+                            }
+                        }
+                        s += 1;
+                    } while (cond);
+                    return [(s-1)-discount, discount==0];
+                }
+
+                render(){
+                    return (
+                        <div>
+                            <p class='streak'>Current vegan streak: {this.num_days()[0]} days. ({this.num_days()[1]?"Including":"Excluding"} today)</p>
                         </div>
                     );
                 }
@@ -133,13 +186,6 @@
                 return get_thumb(day_data.year, day_data.month, day_data.n, image)
             }
 
-            function obj_get(ob, path){
-                ob = ob || {}
-                path.forEach(p=>{
-                    ob = ob[''+p] || {};
-                });
-                return ob;
-            }
 
             class Calendar extends React.Component {
                 constructor(props){
@@ -302,6 +348,7 @@
                                 <section aria-labelledby='question'>
                                     <h1 id='question'>Has [name goes here] been a vegan today?</h1>
                                     <AnswerBox answer={this.state.answer}/>
+                                    <StreakIndicator data={this.state.data}/>
                                 </section>
                             </div>
                             <div class='box' style={ {backgroundColor: '#ffbbbb', display: this.state.error == null?'none':'block'} }>Oops, there was an error when loading the data: {this.state.error}</div>
