@@ -1,0 +1,369 @@
+<!doctype html>
+<html lang="en-GB">
+    <head>
+        <meta charset="UTF-8">
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/6.26.0/babel.min.js" integrity="sha512-kp7YHLxuJDJcOzStgd6vtpxr4ZU9kjn77e6dBsivSz+pUuAuMlE2UTdKB7jjsWT84qbS8kdCWHPETnP/ctrFsA==" crossorigin="anonymous"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/react/16.13.1/umd/react.production.min.js" integrity="sha512-SUJujhtUWZUlwsABaZNnTFRlvCu7XGBZBL1VF33qRvvgNk3pBS9E353kcag4JAv05/nsB9sanSXFbdHAUW9+lg==" crossorigin="anonymous"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/16.13.1/umd/react-dom.production.min.js" integrity="sha512-SYsXmAblZhruCNUVmTp5/v2a1Fnoia06iJh3+L9B9wUaqpRVjcNBQsqAglQG9b5+IaVCfLDH5+vW923JL5epZA==" crossorigin="anonymous"></script>
+        <title>Has Dan been a vegan today?</title>
+        <meta name="Description" content="A record of Dan's efforts to be vegan for veganuary.">
+        <style>
+            div.box{
+                border-radius:15px;
+                background-color:#eeeeff;
+                padding:1em;
+                margin-bottom:1em;
+            }
+            p.answer{
+                margin: 1em;
+                padding: 1em;
+                border-radius: 15px;
+                width: fit-content;
+                font-size:1.5em;
+            }
+
+            div.calgrid{
+                display:grid;
+                grid-template-columns: repeat(7, 1fr);
+            }
+            div.cal_box{
+                border-radius: 15px;
+                border-width: 0.2em;
+                border-style:solid;
+                border-color:white;
+                margin: 0.3em;
+                padding: 0.8em;
+                overflow: hidden;
+            }
+
+            div.day_header{
+                background-color:#aaaaff
+            }
+
+            div.day{
+                background-color: white;
+                cursor: pointer;
+            }
+
+            div.selected{
+                border-color:black;
+            }
+
+            p.notebox{
+                padding:0.5em;
+                border-radius:15px;
+                background-color: white;
+                white-space: pre-line
+            }
+            img.thumb{
+                width: 100%;
+            }
+
+            p{
+                overflow-wrap: break-word;
+            }
+            button{
+                font-size:1em;
+            }
+        </style>
+    </head>
+    <body>
+        <div id='content'></div>
+        <script type='text/babel'>
+
+            function answer_color(answer){
+                if (answer==undefined) return '#ffffff';
+                if (answer==null) return '#ffffff';
+                answer = answer.toLowerCase();
+                if (answer=='no') return '#ffbbbb';
+                if (answer=='yes') return '#bbffbb';
+                return '#ffffbb';
+            }
+
+            function obj_get(ob, path){
+                ob = ob || {}
+                path.forEach(p=>{
+                    ob = ob[''+p] || {};
+                });
+                return ob;
+            }
+
+            class AnswerBox extends React.Component {
+                constructor(props){
+                    super(props);
+                    this.props = props;
+                }
+
+                render(){
+                    return (
+                        <div>
+                            <p class='answer' style={ {backgroundColor:answer_color(this.props.answer)} }>{this.props.answer || 'unknown'}</p>
+                        </div>
+                    );
+                }
+            }
+
+            class StreakIndicator extends React.Component {
+                constructor(props){
+                    super(props);
+                    this.props = props;
+                }
+
+                num_days(){
+                    let s = 0;
+                    let today = new Date(); today.setHours(0, 0, 0, 0);
+                    let ans;
+                    let t;
+                    let cond;
+                    let discount = 0;
+                    do {
+                        t = new Date(today);
+                        t.setDate(t.getDate() - s);
+                        let y = t.getFullYear();
+                        let m = t.getMonth()+1; // plus one, because consistency is overrated :P
+                        let d = t.getDate();
+                        ans = obj_get(this.props.data, [y, m, d, "answer"]);
+                        cond = (typeof ans == "string") && (ans.toLowerCase() == "yes");
+                        console.log(cond);
+                        if (!cond && s==0){
+                            console.log("maybe more?");
+                            // maybe today hasn't been recorded yet
+                            if (typeof ans != "string"){
+                                console.log("yesmore?");
+                                cond = true;
+                                discount = 1;
+                            }
+                        }
+                        s += 1;
+                    } while (cond);
+                    return [(s-1)-discount, discount==0];
+                }
+
+                render(){
+                    return (
+                        <div>
+                            <p class='streak'>Current vegan streak: {this.num_days()[0]} days. ({this.num_days()[1]?"Including":"Excluding"} today)</p>
+                        </div>
+                    );
+                }
+            }
+
+            function get_lang(){
+                if (navigator.languages != undefined)
+                    return navigator.languages[0];
+                return navigator.language;
+            }
+
+            function load_data(good_cb, bad_cb) {
+                var xhttp = new XMLHttpRequest();
+                xhttp.onreadystatechange = function() {
+                    if (this.readyState == 4){
+                        if (this.status == 200) {
+                            good_cb(this.responseText);
+                        }
+                        else{
+                            bad_cb(this.status);
+                        }
+                    }
+                };
+                xhttp.open("GET", "data.json?time="+Date.now(), true);
+                xhttp.send();
+            }
+
+            function full_image(y, m, d, fname){
+                return `data/${y}/${m}/${d}/${fname}`
+            }
+
+            function get_thumb(y, m, d, fname){
+                return `image_cache/thumb/data/${y}/${m}/${d}/${fname}`
+            }
+
+            function first_thumb(day_data){
+                let images = day_data.images
+                if (!images) {return null}
+                let image = images[0];
+                if (!image) {return null}
+                return get_thumb(day_data.year, day_data.month, day_data.n, image)
+            }
+
+
+            class Calendar extends React.Component {
+                constructor(props){
+                    super(props);
+                    this.props = props;
+                    this.state = {
+                        year: this.props.year
+                        ,month: this.props.month
+                        ,day: this.props.day
+                    }
+                }
+
+                days(year, month){
+                    let days_in_month = new Date(year, month+1, 0).getDate();
+                    let first_day_of_week = new Date(year, month, 1).getDay();
+                    if (first_day_of_week == 0) {first_day_of_week = 7;}
+                    return Array.from(Array(first_day_of_week - 1).keys()).map(
+                        d => {
+                            return {n:null} // indicates placeholder day
+                        }
+                    ).concat(
+                    Array.from(Array(days_in_month).keys()).map(
+                        d => {
+                            let day = obj_get(this.props.data, [year, month+1, d+1]);
+                            day.n = d+1;
+                            day.year = year;
+                            day.month = month+1;
+                            return day;
+                        }
+                    ));
+                }
+
+                set_month(m){
+                    // m is delta from current month
+                    let month = this.state.month
+                    let year = this.state.year
+                    month += m;
+                    if (month < 0){
+                        year -= 1;
+                        month = 11;
+                    }
+                    if (month > 11){
+                        year += 1;
+                        month = 0;
+                    }
+                    if (m == 0){
+                        let d = new Date();
+                        year = d.getFullYear();
+                        month =  d.getMonth();
+                    }
+                    this.setState({
+                        month, year
+                    })
+                }
+
+                set_day(d){
+                    // d is day delta from current selection
+                    let day = this.state.day
+                    let month = this.state.month
+                    let year = this.state.year
+                    let newday = new Date(year, month, day);
+                    newday.setDate(newday.getDate() + d);
+                    this.setState({year: newday.getFullYear(), month: newday.getMonth(), day: newday.getDate()});
+                }
+
+                skip_to_day(d){
+                    this.setState({day:d});
+                }
+
+                todays_data(){
+                    return obj_get(this.props.data, [this.state.year, this.state.month+1, this.state.day]);
+                }
+
+                render(){
+                    return(
+                        <div class='box'>
+                            <h1>Historical data and notes</h1>
+                            <img src='loading.gif' alt='Content is still loading, please wait.' style={ {display: this.props.loading?'block':'none'} } />
+                            <div style={ {display: this.props.loading?'none':'block'} } class='cal'>
+                                <section aria-labelledby='month_heading'>
+                                    <h2 id='month_heading'>Month view for {new Date(0,this.state.month).toLocaleDateString(get_lang(), { month: 'long' })} {this.state.year}</h2>
+                                    <button onClick={()=>this.set_month(-1)}>&lt; last month</button>
+                                    <button onClick={()=>this.set_month(0)}>This month</button>
+                                    <button onClick={()=>this.set_month(1)}>next month &gt;</button>
+                                    <div class='calgrid'>
+                                        {Array.from(Array(7).keys()).map(n =>
+                                            <div class='cal_box day_header'>{new Date(2021,1, n+1).toLocaleDateString(get_lang(), { weekday: 'long' })}</div>
+                                        )}
+                                    </div>
+                                    <div class='calgrid'>
+                                        {this.days(this.state.year, this.state.month).map(day_data =>
+                                            <div onClick={()=>{this.skip_to_day(day_data.n)}} class={'cal_box day'+ (this.state.day == day_data.n?' selected':'')} style={ {opacity:day_data.n == null?0:1, backgroundColor:answer_color(day_data.answer)} }>
+                                                {day_data.n}
+                                                {day_data.images && day_data.images.length>0?<img class='thumb' src={first_thumb(day_data)} alt={day_data.image_alts && day_data.image_alts[0]} />:[]}
+                                            </div>
+                                        )}
+                                        <div style={{clear:'both'}}></div>
+                                    </div>
+                                </section>
+
+                                <section aria-labelledby='day_heading'>
+                                    <h2 id='day_heading'>Was Dan vegan on {this.state.day} {new Date(0,this.state.month).toLocaleDateString(get_lang(), { month: 'long' })} {this.state.year}?</h2>
+                                    <AnswerBox answer={this.todays_data()['answer']} />
+                                    <div>
+                                        <button onClick={()=>this.set_day(-1)}>&lt; previous day</button>
+                                        <button onClick={()=>this.set_day(+1)}>next day &gt;</button>
+                                    </div>
+                                    <h3>Notes for selected day</h3>
+                                    <p class='notebox'>{(this.todays_data()['notes'] || '(No notes yet for this date)')}</p>
+                                    <h3>Images attached to selected day</h3>
+                                    {(this.todays_data().images || []).map(
+                                        (img,i)=> <a href={full_image(this.state.year, this.state.month+1, this.state.day, img)}><img alt={this.todays_data().image_alts[i]} src={get_thumb(this.state.year, this.state.month+1, this.state.day, img)} /></a>
+                                    )}
+
+                                </section>
+                                <footer>
+                                    <div>
+                                        <p>
+                                            This is an instance of the Veganuary progress logger tool written by Dan. See details here: <a href='https://github.com/danieljabailey/have_I_been_vegan_today'>https://github.com/danieljabailey/have_I_been_vegan_today</a>
+                                            <br />
+                                            Why did Dan write this? Well if I'm gonna turn vegan this month, I want a record of how it happened.
+                                        </p>
+                                    </div>
+                                </footer>
+                            </div>
+                        </div>
+                    );
+                }
+            }
+
+            class App extends React.Component {
+                constructor(props){
+                    super(props);
+                    this.props = props;
+                    this.answer = 'unknown';
+                    this.state = {data:{}, error:null, answer:'loading data...', loading:true};
+                    let d = new Date();
+                    this.year = d.getFullYear();
+                    this.month = d.getMonth();
+                    this.day= d.getDate();
+                    this.data_get = this.data_get.bind(this);
+                    this.data_not_get = this.data_not_get.bind(this);
+                    load_data(this.data_get, this.data_not_get);
+                }
+
+                data_get(data_string){
+                    let data = JSON.parse(data_string);
+                    let answer = obj_get(data, [this.year, this.month+1, this.day])['answer'];
+                    this.setState({data: JSON.parse(data_string), answer, loading:false});
+                }
+
+                data_not_get(errnum){
+                    this.setState({error:'HTTP status '+errnum});
+                }
+
+                render(){
+                    return(
+                        <div>
+                            <div class='box'>
+                                <section aria-labelledby='question'>
+                                    <h1 id='question'>Has Dan been a vegan today?</h1>
+                                    <AnswerBox answer={this.state.answer}/>
+                                    <StreakIndicator data={this.state.data}/>
+                                </section>
+                            </div>
+                            <div class='box' style={ {backgroundColor: '#ffbbbb', display: this.state.error == null?'none':'block'} }>Oops, there was an error when loading the data: {this.state.error}</div>
+                            <Calendar data={this.state.data} loading={this.state.loading} year={this.year} month={this.month} day={this.day}/>
+                            <div style={ {height:'50vh'} }></div>
+                        </div>
+                    );
+                }
+            }
+
+            ReactDOM.render(
+                <App/>
+                ,document.getElementById('content')
+            );
+
+            </script>
+    </body>
+</html>

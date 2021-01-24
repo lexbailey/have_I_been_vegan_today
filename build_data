@@ -1,0 +1,69 @@
+#!/usr/bin/env python3
+
+import os
+import json
+import argparse
+import subprocess
+
+parser = argparse.ArgumentParser()
+parser.add_argument('data_dir')
+parser.add_argument('output_file')
+
+args = parser.parse_args()
+
+_dir = args.data_dir
+out_fname = args.output_file
+
+years = sorted([int(y) for y in os.listdir(_dir)])
+
+data = {}
+
+def file_contents_or_blank(fname):
+    try:
+        return open(fname).read().strip()
+    except:
+        return ''
+
+def get_alt_text(fname):
+    fname += '.alt'
+    try:
+        with open(fname) as f:
+            return f.read().strip()
+    except FileNotFoundError:
+        print('Warning: Unable to locate image alt text file: {}'.format(fname))
+    return '';
+
+def resize_image(fname_in, fname_out, size):
+    subprocess.check_call(['convert', fname_in, '-auto-orient', '-resize', size, '-gravity','center', '-background','black', '-extent', size, '-quality','90', fname_out])
+
+for year in years:
+    data[year] = {}
+    months_dir = os.path.join(_dir, str(year))
+    months = sorted([int(m) for m in os.listdir(months_dir)])
+    for month in months:
+        data[year][month] = {}
+        days_dir = os.path.join(months_dir, str(month))
+        days = sorted([int(d) for d in os.listdir(days_dir)])
+        for day in days:
+            leaf_dir = os.path.join(days_dir, str(day))
+            image_fnames = [f for f in os.listdir(leaf_dir) if os.path.splitext(f)[1].lower() == '.jpg']
+            thumb_cache_dir = os.path.join('image_cache/thumb/', leaf_dir)
+            prev_cache_dir = os.path.join('image_cache/preview/', leaf_dir)
+            os.makedirs(thumb_cache_dir, exist_ok=True)
+            os.makedirs(prev_cache_dir, exist_ok=True)
+            image_alts = [
+                get_alt_text(os.path.join(leaf_dir, os.path.splitext(f)[0])) for f in image_fnames
+            ]
+            for image in image_fnames:
+                resize_image(os.path.join(leaf_dir, image), os.path.join(thumb_cache_dir, image), '300x200')
+                resize_image(os.path.join(leaf_dir, image), os.path.join(prev_cache_dir, image), '700x400')
+            day_data = {
+                'answer': file_contents_or_blank(os.path.join(leaf_dir, 'answer'))
+                ,'notes': file_contents_or_blank(os.path.join(leaf_dir, 'notes'))
+                ,'images': image_fnames
+                ,'image_alts': image_alts
+            }
+            data[year][month][day] = day_data
+
+with open(out_fname, 'w+') as f:
+    f.write(json.dumps(data))
